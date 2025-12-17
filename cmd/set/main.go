@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nsu-smp-version-memory/version_memory/internal/core"
-	"github.com/nsu-smp-version-memory/version_memory/internal/set"
+	"github.com/nsu-smp-version-memory/versioned-memory/internal/core"
+	"github.com/nsu-smp-version-memory/versioned-memory/versioned"
 )
 
 func main() {
@@ -20,7 +20,7 @@ func main() {
 
 	type result struct {
 		id  int
-		set set.Set
+		set versioned.Set
 	}
 
 	results := make([]result, workers)
@@ -33,7 +33,7 @@ func main() {
 			defer wg.Done()
 
 			src := core.NewSource(core.SourceID(i+1), versionManager)
-			local := set.New(rootV)
+			local := versioned.New(rootV)
 
 			r := rand.New(rand.NewSource(int64(1000 + i)))
 

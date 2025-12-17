@@ -1,4 +1,4 @@
-package set
+package versioned
 
 func (s Set) Has(key int) bool {
 	cur := s.root

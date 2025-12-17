@@ -1,6 +1,6 @@
-package set
+package versioned
 
-import "github.com/nsu-smp-version-memory/version_memory/internal/core"
+import "github.com/nsu-smp-version-memory/versioned-memory/internal/core"
 
 func (a Set) Merge(vm *core.VersionManager, b Set) Set {
 	base := core.CommonAncestor(a.version, b.version)
