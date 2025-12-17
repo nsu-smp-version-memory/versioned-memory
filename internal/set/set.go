@@ -1,15 +1,15 @@
 package set
 
-import "core"
+import "github.com/nsu-smp-version-memory/version_memory/internal/core"
 
 type TagSet map[core.OperationID]struct{}
 
-func (s TagSet) Clone() TagSet {
-	if len(s) == 0 {
+func (set TagSet) Copy() TagSet {
+	if len(set) == 0 {
 		return nil
 	}
-	out := make(TagSet, len(s))
-	for k := range s {
+	out := make(TagSet, len(set))
+	for k := range set {
 		out[k] = struct{}{}
 	}
 	return out
@@ -26,14 +26,14 @@ type node struct {
 }
 
 type Set struct {
-	root *node
-	v    *core.Version
+	root    *node
+	version *core.Version
 }
 
-func New(v *core.Version) Set {
-	return Set{v: v}
+func New(version *core.Version) Set {
+	return Set{version: version}
 }
 
-func (s Set) Version() *core.Version {
-	return s.v
+func (set Set) Version() *core.Version {
+	return set.version
 }

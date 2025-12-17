@@ -1,3 +1,3 @@
-module github.com/jks-sn/versioned-memory
+module github.com/nsu-smp-version-memory/version_memory
 
 go 1.25.4
