@@ -2,11 +2,11 @@ package versioned
 
 import "github.com/nsu-smp-version-memory/versioned-memory/internal/core"
 
-func (a Set) Merge(vm *core.VersionManager, b Set) Set {
-	base := core.CommonAncestor(a.version, b.version)
+func (s Set) Merge(vm *core.VersionManager, b Set) Set {
+	base := core.CommonAncestor(s.version, b.version)
 	version_parent := vm.NewChild(base)
 
-	items := mergeKeyItems(a.root, b.root)
+	items := mergeKeyItems(s.root, b.root)
 	root := buildBalanced(items)
 
 	return Set{

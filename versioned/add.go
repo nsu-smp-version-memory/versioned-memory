@@ -2,13 +2,13 @@ package versioned
 
 import "github.com/nsu-smp-version-memory/versioned-memory/internal/core"
 
-func (set Set) Add(src *core.Source, key int) Set {
+func (s Set) Add(src *core.Source, key int) Set {
 	operationID := src.NextOperationID()
 
 	var changed bool
-	newRoot := addNode(set.root, key, operationID, &changed)
+	newRoot := addNode(s.root, key, operationID, &changed)
 	if !changed {
-		return set
+		return s
 	}
 
 	return Set{

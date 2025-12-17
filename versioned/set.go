@@ -31,6 +31,6 @@ func New(version *core.Version) Set {
 	return Set{version: version}
 }
 
-func (set Set) Version() *core.Version {
-	return set.version
+func (s Set) Version() *core.Version {
+	return s.version
 }
