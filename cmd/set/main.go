@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nsu-smp-version-memory/version_memory/internal/core"
-	"github.com/nsu-smp-version-memory/version_memory/internal/set"
+	"github.com/nsu-smp-version-memory/versioned-memory/internal/core"
+	"github.com/nsu-smp-version-memory/versioned-memory/pkg/versioned"
 )
 
 func main() {
