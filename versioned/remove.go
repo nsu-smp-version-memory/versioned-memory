@@ -1,6 +1,6 @@
-package set
+package versioned
 
-import "github.com/nsu-smp-version-memory/version_memory/internal/core"
+import "github.com/nsu-smp-version-memory/versioned-memory/internal/core"
 
 func (s Set) Remove(src *core.Source, value int) Set {
 	_ = src.NextOperationID()
