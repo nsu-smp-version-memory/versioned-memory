@@ -2,11 +2,11 @@ package set
 
 import "github.com/nsu-smp-version-memory/version_memory/internal/core"
 
-func (set Set) Add(src *core.Source, key int) Set {
-	operationID := src.NextOperationID()
+func (set Set) Remove(src *core.Source, value int) Set {
+	_ = src.NextOperationID()
 
 	var changed bool
-	newRoot := addNode(set.root, key, operationID, &changed)
+	newRoot := removeNode(s.root, value, &changed)
 	if !changed {
 		return set
 	}
@@ -17,17 +17,13 @@ func (set Set) Add(src *core.Source, key int) Set {
 	}
 }
 
-func addNode(n *node, value int, op core.OperationID, changed *bool) *node {
+func removeNode(n *node, value int, changed *bool) *node {
 	if n == nil {
-		*changed = true
-		return &node{
-			value: value,
-			adds:  TagSet{op: {}},
-		}
+		return nil
 	}
 
 	if value < n.value {
-		left := addNode(n.left, value, op, changed)
+		left := removeNode(n.left, value, changed)
 		if !*changed {
 			return n
 		}
@@ -41,7 +37,7 @@ func addNode(n *node, value int, op core.OperationID, changed *bool) *node {
 	}
 
 	if value > n.value {
-		right := addNode(n.right, value, op, changed)
+		right := removeNode(n.right, value, changed)
 		if !*changed {
 			return n
 		}
@@ -54,24 +50,33 @@ func addNode(n *node, value int, op core.OperationID, changed *bool) *node {
 		}
 	}
 
-	if n.adds != nil {
-		if _, exists := n.adds[op]; exists {
-			*changed = false
-			return n
-		}
+	if len(n.adds) == 0 {
+		return n
 	}
 
-	adds := n.adds.Copy()
-	if adds == nil {
-		adds = make(TagSet)
+	dels := n.dels.Copy()
+	if dels == nil {
+		dels = make(TagSet)
 	}
-	adds[op] = struct{}{}
+
+	localChanged := false
+	for tag := range n.adds {
+		if _, already := dels[tag]; already {
+			continue
+		}
+		dels[tag] = struct{}{}
+		localChanged = true
+	}
+
+	if !localChanged {
+		return n
+	}
 
 	*changed = true
 	return &node{
 		value: n.value,
-		adds:  adds,
-		dels:  n.dels,
+		adds:  n.adds,
+		dels:  dels,
 		left:  n.left,
 		right: n.right,
 	}

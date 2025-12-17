@@ -1,56 +1,101 @@
 package set
 
-func (s Set) Merge(other Set) Set {
-	a := s.ToSortedSlice()
-	b := other.ToSortedSlice()
+import "github.com/nsu-smp-version-memory/version_memory/internal/core"
 
-	merged := mergeUniqueSorted(a, b)
-	root := buildBalanced(merged)
+func (a Set) Merge(vm *core.VersionManager, b Set) Set {
+	base := core.CommonAncestor(a.v, b.v)
+	v := vm.NewChild(base)
+
+	items := mergeKeyItems(a.root, b.root)
+	root := buildBalanced(items)
 
 	return Set{
-		root: root,
-		size: len(merged),
+		root:    root,
+		version: v,
 	}
 }
 
-func mergeUniqueSorted(a, b []int) []int {
-	out := make([]int, 0, len(a)+len(b))
+type keyItem struct {
+	key  int
+	adds TagSet
+	dels TagSet
+}
+
+func mergeKeyItems(a, b *node) []keyItem {
+	var sa, sb []keyItem
+	inOrderItems(a, &sa)
+	inOrderItems(b, &sb)
+
+	out := make([]keyItem, 0, len(sa)+len(sb))
 	i, j := 0, 0
 
-	for i < len(a) && j < len(b) {
-		if a[i] < b[j] {
-			out = append(out, a[i])
+	for i < len(sa) && j < len(sb) {
+		if sa[i].key < sb[j].key {
+			out = append(out, sa[i])
 			i++
-		} else if a[i] > b[j] {
-			out = append(out, b[j])
+		} else if sa[i].key > sb[j].key {
+			out = append(out, sb[j])
 			j++
 		} else {
-			out = append(out, a[i])
+			out = append(out, keyItem{
+				key:  sa[i].key,
+				adds: unionTags(sa[i].adds, sb[j].adds),
+				dels: unionTags(sa[i].dels, sb[j].dels),
+			})
 			i++
 			j++
 		}
 	}
 
-	for i < len(a) {
-		out = append(out, a[i])
+	for i < len(sa) {
+		out = append(out, sa[i])
 		i++
 	}
-	for j < len(b) {
-		out = append(out, b[j])
+	for j < len(sb) {
+		out = append(out, sb[j])
 		j++
 	}
 
 	return out
 }
 
-func buildBalanced(values []int) *node {
-	if len(values) == 0 {
+func inOrderItems(n *node, out *[]keyItem) {
+	if n == nil {
+		return
+	}
+	inOrderItems(n.left, out)
+	*out = append(*out, keyItem{
+		key:  n.value,
+		adds: n.adds,
+		dels: n.dels,
+	})
+	inOrderItems(n.right, out)
+}
+
+func unionTags(a, b TagSet) TagSet {
+	if len(a) == 0 && len(b) == 0 {
 		return nil
 	}
-	mid := len(values) / 2
+	out := make(TagSet, len(a)+len(b))
+	for k := range a {
+		out[k] = struct{}{}
+	}
+	for k := range b {
+		out[k] = struct{}{}
+	}
+	return out
+}
+
+func buildBalanced(items []keyItem) *node {
+	if len(items) == 0 {
+		return nil
+	}
+	m := len(items) / 2
 	return &node{
-		value: values[mid],
-		left:  buildBalanced(values[:mid]),
-		right: buildBalanced(values[mid+1:]),
+		value: items[m].key,
+		adds:  items[m].adds,
+		dels:  items[m].dels,
+		left:  buildBalanced(items[:m]),
+		right: buildBalanced(items[m+1:]),
 	}
 }

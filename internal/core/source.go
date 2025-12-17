@@ -11,18 +11,18 @@ type Source struct {
 	next  atomic.Uint32
 	armed atomic.Bool
 
-	version_manager *VersionManager
+	versionManager *VersionManager
 
 	mutex   sync.Mutex
 	current *Version
 }
 
-func NewSource(id SourceID, version_manager *VersionManager) *Source {
+func NewSource(id SourceID, versionManager *VersionManager) *Source {
 	s := &Source{
-		id:              id,
-		version_manager: version_manager,
+		id:             id,
+		versionManager: versionManager,
 	}
-	s.current = version_manager.Root()
+	s.current = versionManager.Root()
 	s.armed.Store(true)
 	return s
 }
@@ -41,11 +41,11 @@ func (s *Source) Arm() {
 	s.armed.Store(true)
 }
 
-func (s *Source) NextOperationID() OperationID {
-	if s.armed.Swap(false) {
-		s.mutex.Lock()
-		s.current = s.version_manager.NewChild(s.current)
-		s.mutex.Unlock()
+func (source *Source) NextOperationID() OperationID {
+	if source.armed.Swap(false) {
+		source.mutex.Lock()
+		source.current = source.versionManager.NewChild(source.current)
+		source.mutex.Unlock()
 	}
 
 	idx := OperationIndex(s.next.Add(1))

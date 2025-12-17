@@ -16,7 +16,7 @@ func (set TagSet) Copy() TagSet {
 }
 
 type node struct {
-	key int
+	value int
 
 	adds TagSet
 	dels TagSet
