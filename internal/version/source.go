@@ -12,6 +12,6 @@ func NewSource() *Source {
 	}
 }
 
-func (s *Source) Peek() uint64 {
+func (s *Source) Next() uint64 {
 	return s.currVersion.Add(1)
 }

@@ -26,7 +26,7 @@ func New[DIFF any]() *Timeline[DIFF] {
 
 func (t *Timeline[DIFF]) NextChange(diff DIFF) *Timeline[DIFF] {
 	last := &Node[DIFF]{
-		version: t.versionSource.Peek(),
+		version: t.versionSource.Next(),
 		prev:    t.last,
 		diff:    diff,
 	}
