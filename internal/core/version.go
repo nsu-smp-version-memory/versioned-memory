@@ -9,88 +9,65 @@ type Version struct {
 	parent *Version
 }
 
-func (version *Version) ID() VersionID {
-	return version.id
+func (v *Version) ID() VersionID {
+	return v.id
 }
 
-func (version *Version) Parent() *Version {
-	return version.parent
+func (v *Version) Parent() *Version {
+	return v.parent
 }
 
-type VersionManager struct {
-	mutex sync.Mutex
-	next  VersionID
-	root  *Version
+type Manager struct {
+	mutex       sync.Mutex
+	nextVersion VersionID
+	nextSource  SourceID
+	roots       map[Kind]*Version
 }
 
-func NewVersionManager() *VersionManager {
-	versionManager := &VersionManager{next: 1}
-	versionManager.root = &Version{id: versionManager.next}
-	versionManager.next++
-	return versionManager
+func newManager() *Manager {
+	manager := &Manager{
+		nextVersion: 1,
+		nextSource:  1,
+		roots:       make(map[Kind]*Version, 3),
+	}
+	// One root per container kind.
+	manager.roots[KindSet] = &Version{id: manager.allocVersionIDLocked()}
+	manager.roots[KindStack] = &Version{id: manager.allocVersionIDLocked()}
+	manager.roots[KindQueue] = &Version{id: manager.allocVersionIDLocked()}
+	return manager
 }
 
-func (v *VersionManager) Root() *Version {
-	v.mutex.Lock()
-	defer v.mutex.Unlock()
-	return v.root
+func (m *Manager) allocVersionIDLocked() VersionID {
+	id := m.nextVersion
+	m.nextVersion++
+	return id
 }
 
-func (v *VersionManager) NewChild(parent *Version) *Version {
-	v.mutex.Lock()
-	defer v.mutex.Unlock()
+func (m *Manager) Root(kind Kind) *Version {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	return m.roots[kind]
+}
+
+func (m *Manager) NewChild(parent *Version) *Version {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
 
 	if parent == nil {
-		parent = v.root
+		parent = &Version{id: m.allocVersionIDLocked()}
 	}
 
 	version := &Version{
-		id:     v.next,
+		id:     m.allocVersionIDLocked(),
 		parent: parent,
 	}
-	v.next++
 	return version
 }
 
-func IsAncestor(candidate, version *Version) bool {
-	if candidate == nil || version == nil {
-		return false
-	}
-	for current := version; current != nil; current = current.parent {
-		if current == candidate {
-			return true
-		}
-	}
-	return false
-}
-
-func CommonAncestor(a, b *Version) *Version {
-	depth_a := depth(a)
-	depth_b := depth(b)
-
-	for depth_a > depth_b {
-		a = a.parent
-		depth_a--
-	}
-	for depth_b > depth_a {
-		b = b.parent
-		depth_b--
-	}
-
-	for a != nil && b != nil {
-		if a == b {
-			return a
-		}
-		a = a.parent
-		b = b.parent
-	}
-	return nil
-}
-
-func depth(v *Version) int {
-	d := 0
-	for cur := v; cur != nil; cur = cur.parent {
-		d++
-	}
-	return d - 1
+func (m *Manager) newSourceID() SourceID {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	id := m.nextSource
+	m.nextSource++
+	return id
 }

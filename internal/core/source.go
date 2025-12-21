@@ -6,16 +6,18 @@ type Source struct {
 	next  OperationIndex
 	armed bool
 
-	versionManager *VersionManager
-	current        *Version
+	manager *Manager
+	current *Version
+	kind    Kind
 }
 
-func NewSource(id SourceID, vm *VersionManager) *Source {
+func newSource(kind Kind, m *Manager) *Source {
 	s := &Source{
-		id:             id,
-		versionManager: vm,
-		current:        vm.Root(),
-		armed:          true,
+		id:      m.newSourceID(),
+		manager: m,
+		kind:    kind,
+		current: m.Root(kind),
+		armed:   true,
 	}
 	return s
 }
@@ -34,10 +36,9 @@ func (s *Source) Arm() {
 
 func (s *Source) NextOperationID() OperationID {
 	if s.armed {
-		s.current = s.versionManager.NewChild(s.current)
+		s.current = s.manager.NewChild(s.current)
 		s.armed = false
 	}
-
 	s.next++
 	return NewOperationID(s.id, s.next)
 }
