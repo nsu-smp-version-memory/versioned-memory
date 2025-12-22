@@ -135,6 +135,7 @@ func TestConcurrentTwoGoroutinesMergeAdds(t *testing.T) {
 
 	assert.True(t, reflect.DeepEqual(got, want))
 }
+
 func TestWithBranchAndMergeBranches(t *testing.T) {
 	s := NewSet()
 	s.Add(1)
@@ -149,6 +150,23 @@ func TestWithBranchAndMergeBranches(t *testing.T) {
 
 	<-done
 	s.MergeBranches()
+
+	assert.True(t, reflect.DeepEqual(s.Items(), []int{2, 3, 10}))
+}
+
+func TestGoWithJoin(t *testing.T) {
+	s := NewSet()
+	s.Add(1)
+	s.Add(2)
+
+	s.Go(func(s1 *Set) {
+		s1.Remove(1)
+		s1.Add(10)
+	})
+
+	s.Add(3)
+
+	s.Join()
 
 	assert.True(t, reflect.DeepEqual(s.Items(), []int{2, 3, 10}))
 }

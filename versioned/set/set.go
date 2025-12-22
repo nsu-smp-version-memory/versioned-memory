@@ -11,6 +11,7 @@ type Set struct {
 	mutex           sync.Mutex
 	timeline        *core.Timeline[Diff]
 	pendingBranches []pendingBranch
+	wg              sync.WaitGroup
 }
 
 func NewSet() *Set {

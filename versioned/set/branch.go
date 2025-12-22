@@ -18,7 +18,7 @@ func (s *Set) WithBranch(fn func(local *Set)) <-chan struct{} {
 
 	local := &Set{timeline: branchTimeline}
 
-	go func() {
+	s.wg.Go(func() {
 		defer close(done)
 
 		fn(local)
@@ -29,7 +29,7 @@ func (s *Set) WithBranch(fn func(local *Set)) <-chan struct{} {
 			since:    since,
 		})
 		s.mutex.Unlock()
-	}()
+	})
 
 	return done
 }
@@ -59,4 +59,13 @@ func (s *Set) MergeBranches() {
 	s.mutex.Lock()
 	s.timeline = core.TimelineFromOperations(core.NewSource(), ops)
 	s.mutex.Unlock()
+}
+
+func (s *Set) Go(f func(s *Set)) {
+	s.WithBranch(f)
+}
+
+func (s *Set) Join() {
+	s.wg.Wait()
+	s.MergeBranches()
 }
