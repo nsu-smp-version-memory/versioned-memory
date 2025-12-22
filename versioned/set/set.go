@@ -12,11 +12,13 @@ type Set struct {
 	timeline        *core.Timeline[Diff]
 	pendingBranches []pendingBranch
 	wg              sync.WaitGroup
+	merger          core.Merger[Diff]
 }
 
 func NewSet() *Set {
 	return &Set{
 		timeline: core.NewTimeline[Diff](core.NewSource()),
+		merger:   &NaturalOrderMerger{},
 	}
 }
 
@@ -84,4 +86,34 @@ func sortOperationsByID[DIFF any](ops []core.Operation[DIFF]) {
 	sort.Slice(ops, func(i, j int) bool {
 		return ops[i].ID.Before(ops[j].ID)
 	})
+}
+
+func (s *Set) SetMerger(merger core.Merger[Diff]) {
+	s.merger = merger
+}
+
+type NaturalOrderMerger struct {
+}
+
+func (_ *NaturalOrderMerger) Merge(operationBranches [][]core.Operation[Diff]) []core.Operation[Diff] {
+	result := make([]core.Operation[Diff], 0)
+
+	for _, ops := range operationBranches {
+		result = append(result, ops...)
+	}
+
+	return result
+}
+
+type ReverseOrderMerger struct {
+}
+
+func (_ *ReverseOrderMerger) Merge(operationBranches [][]core.Operation[Diff]) []core.Operation[Diff] {
+	result := make([]core.Operation[Diff], 0)
+
+	for i := len(operationBranches) - 1; i >= 0; i-- {
+		result = append(result, operationBranches[i]...)
+	}
+
+	return result
 }

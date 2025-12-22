@@ -41,23 +41,23 @@ func (s *Set) MergeBranches() {
 	base := s.timeline
 	s.mutex.Unlock()
 
-	ops := make([]core.Operation[Diff], 0)
+	input := make([][]core.Operation[Diff], 0)
 
 	if base != nil {
-		ops = append(ops, base.Operations()...)
+		input = append(input, base.Operations())
 	}
 
 	for _, br := range pending {
 		if br.timeline == nil {
 			continue
 		}
-		ops = append(ops, br.timeline.OperationsAfter(br.since)...)
+		input = append(input, br.timeline.OperationsAfter(br.since))
 	}
 
-	sortOperationsByID(ops)
+	result := s.merger.Merge(input)
 
 	s.mutex.Lock()
-	s.timeline = core.TimelineFromOperations(core.NewSource(), ops)
+	s.timeline = core.TimelineFromOperations(core.NewSource(), result)
 	s.mutex.Unlock()
 }
 
