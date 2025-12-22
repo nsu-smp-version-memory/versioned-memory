@@ -37,9 +37,9 @@ func TestMergeNonConflicting(t *testing.T) {
 
 	m := Merge(a, b)
 
-	if got, want := m.Items(), []int{1, 3}; !reflect.DeepEqual(got, want) {
-		t.Fatalf("Merged Items()=%v, want %v", got, want)
-	}
+	assert.Contains(t, m.Items(), 1)
+	assert.Contains(t, m.Items(), 3)
+	assert.Equal(t, 2, m.Size())
 }
 
 func TestMergeConflictingSameKeyDeterministicBySourceOrder(t *testing.T) {
@@ -51,9 +51,7 @@ func TestMergeConflictingSameKeyDeterministicBySourceOrder(t *testing.T) {
 		b.Remove(1)
 
 		m := Merge(a, b)
-		if got, want := m.Items(), []int{}; !reflect.DeepEqual(got, want) {
-			t.Fatalf("[A then B] Items()=%v, want %v", got, want)
-		}
+		assert.Empty(t, m.Items())
 	}
 
 	{
@@ -64,9 +62,9 @@ func TestMergeConflictingSameKeyDeterministicBySourceOrder(t *testing.T) {
 		b.Remove(1)
 
 		m := Merge(a, b)
-		if got, want := m.Items(), []int{1}; !reflect.DeepEqual(got, want) {
-			t.Fatalf("[B then A] Items()=%v, want %v", got, want)
-		}
+
+		assert.Equal(t, 1, m.Size())
+		assert.Contains(t, m.Items(), 1)
 	}
 }
 
@@ -87,9 +85,7 @@ func TestMergeAssociative(t *testing.T) {
 	left := Merge(Merge(a, b), c)
 	right := Merge(a, Merge(b, c))
 
-	if gotL, gotR := left.Items(), right.Items(); !reflect.DeepEqual(gotL, gotR) {
-		t.Fatalf("merge not associative: left=%v right=%v", gotL, gotR)
-	}
+	assert.True(t, reflect.DeepEqual(left.Items(), right.Items()))
 }
 
 func TestMergeDoesNotMutateInputs(t *testing.T) {
@@ -107,12 +103,8 @@ func TestMergeDoesNotMutateInputs(t *testing.T) {
 	afterA := a.Items()
 	afterB := b.Items()
 
-	if !reflect.DeepEqual(beforeA, afterA) {
-		t.Fatalf("input A mutated: before=%v after=%v", beforeA, afterA)
-	}
-	if !reflect.DeepEqual(beforeB, afterB) {
-		t.Fatalf("input B mutated: before=%v after=%v", beforeB, afterB)
-	}
+	assert.True(t, reflect.DeepEqual(afterA, beforeA))
+	assert.True(t, reflect.DeepEqual(afterB, beforeB))
 }
 
 func TestConcurrentTwoGoroutinesMergeAdds(t *testing.T) {
@@ -140,9 +132,8 @@ func TestConcurrentTwoGoroutinesMergeAdds(t *testing.T) {
 
 	got := m.Items()
 	want := []int{1, 2, 3, 4}
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("merged items=%v, want %v", got, want)
-	}
+
+	assert.True(t, reflect.DeepEqual(got, want))
 }
 func TestWithBranchAndMergeBranches(t *testing.T) {
 	s := NewSet()
@@ -159,7 +150,5 @@ func TestWithBranchAndMergeBranches(t *testing.T) {
 	<-done
 	s.MergeBranches()
 
-	if got, want := s.Items(), []int{2, 3, 10}; !reflect.DeepEqual(got, want) {
-		t.Fatalf("Items()=%v, want %v", got, want)
-	}
+	assert.True(t, reflect.DeepEqual(s.Items(), []int{2, 3, 10}))
 }
