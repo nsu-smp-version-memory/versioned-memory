@@ -35,14 +35,14 @@ func Merge(a, b *Set) *Set {
 	operations := make([]core.Operation[Diff], 0)
 
 	a.mutex.Lock()
-	timeline_a := a.timeline
+	timelineA := a.timeline
 	a.mutex.Unlock()
-	operations = append(operations, timeline_a.Operations()...)
+	operations = append(operations, timelineA.Operations()...)
 
 	b.mutex.Lock()
-	timeline_b := b.timeline
+	timelineB := b.timeline
 	b.mutex.Unlock()
-	operations = append(operations, timeline_b.Operations()...)
+	operations = append(operations, timelineB.Operations()...)
 
 	sortOperationsByID(operations)
 
