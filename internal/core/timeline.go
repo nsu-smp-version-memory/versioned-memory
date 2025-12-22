@@ -48,7 +48,7 @@ func TimelineFromOperations[DIFF any](src *Source, ops []Operation[DIFF]) *Timel
 }
 
 func (t *Timeline[DIFF]) Operations() []Operation[DIFF] {
-	var tmp []Operation[DIFF]
+	tmp := make([]Operation[DIFF], 0)
 	for cur := t.last; cur != nil; cur = cur.prev {
 		tmp = append(tmp, Operation[DIFF]{ID: cur.id, Diff: cur.diff})
 	}
