@@ -2,12 +2,15 @@ package set
 
 import (
 	"sort"
+	"sync"
 
 	"github.com/nsu-smp-version-memory/versioned-memory/internal/core"
 )
 
 type Set struct {
-	timeline *core.Timeline[Diff]
+	mutex           sync.Mutex
+	timeline        *core.Timeline[Diff]
+	pendingBranches []pendingBranch
 }
 
 func NewSet() *Set {
@@ -17,38 +20,67 @@ func NewSet() *Set {
 }
 
 func (s *Set) Add(value int) {
+	s.mutex.Lock()
 	s.timeline = s.timeline.NextChange(Diff{Kind: Add, Value: value})
+	s.mutex.Unlock()
 }
 
 func (s *Set) Remove(value int) {
+	s.mutex.Lock()
 	s.timeline = s.timeline.NextChange(Diff{Kind: Remove, Value: value})
+	s.mutex.Unlock()
 }
 
 func Merge(a, b *Set) *Set {
-	ops := make([]core.Operation[Diff], 0)
+	operations := make([]core.Operation[Diff], 0)
 
-	ops = append(ops, a.timeline.Operations()...)
-	ops = append(ops, b.timeline.Operations()...)
+	a.mutex.Lock()
+	timeline_a := a.timeline
+	a.mutex.Unlock()
+	operations = append(operations, timeline_a.Operations()...)
 
-	sort.Slice(ops, func(i, j int) bool { return ops[i].ID.Before(ops[j].ID) })
+	b.mutex.Lock()
+	timeline_b := b.timeline
+	b.mutex.Unlock()
+	operations = append(operations, timeline_b.Operations()...)
+
+	sortOperationsByID(operations)
 
 	return &Set{
-		timeline: core.TimelineFromOperations(core.NewSource(), ops),
+		timeline: core.TimelineFromOperations(core.NewSource(), operations),
 	}
 }
 
 func (s *Set) Contains(key int) bool {
-	m := replayToMap(s.timeline)
+	s.mutex.Lock()
+	tl := s.timeline
+	s.mutex.Unlock()
+
+	m := replayToMap(tl)
 	_, ok := m[key]
 	return ok
 }
 
 func (s *Set) Items() []int {
-	m := replayToMap(s.timeline)
+	s.mutex.Lock()
+	tl := s.timeline
+	s.mutex.Unlock()
+
+	m := replayToMap(tl)
 	return mapKeysSorted(m)
 }
 
 func (s *Set) Size() int {
-	m := replayToMap(s.timeline)
+	s.mutex.Lock()
+	tl := s.timeline
+	s.mutex.Unlock()
+
+	m := replayToMap(tl)
 	return len(m)
+}
+
+func sortOperationsByID[DIFF any](ops []core.Operation[DIFF]) {
+	sort.Slice(ops, func(i, j int) bool {
+		return ops[i].ID.Before(ops[j].ID)
+	})
 }

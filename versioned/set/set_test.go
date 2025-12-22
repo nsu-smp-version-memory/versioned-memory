@@ -153,3 +153,22 @@ func TestConcurrentTwoGoroutinesMergeAdds(t *testing.T) {
 		t.Fatalf("merged items=%v, want %v", got, want)
 	}
 }
+func TestWithBranchAndMergeBranches(t *testing.T) {
+	s := NewSet()
+	s.Add(1)
+	s.Add(2)
+
+	done := s.WithBranch(func(s *Set) {
+		s.Remove(1)
+		s.Add(10)
+	})
+
+	s.Add(3)
+
+	<-done
+	s.MergeBranches()
+
+	if got, want := s.Items(), []int{2, 3, 10}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("Items()=%v, want %v", got, want)
+	}
+}
