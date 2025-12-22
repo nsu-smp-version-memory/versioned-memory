@@ -1,23 +1,24 @@
 package set
 
-import "sort"
+import (
+	"sort"
 
-func replayToMap(ops []operation) map[int]struct{} {
-	if len(ops) == 0 {
-		return map[int]struct{}{}
-	}
+	"github.com/nsu-smp-version-memory/versioned-memory/internal/core"
+)
 
-	tmp := make([]operation, len(ops))
-	copy(tmp, ops)
-	sort.Slice(tmp, func(i, j int) bool { return tmp[i].id.Before(tmp[j].id) })
+func replayToMap(tl *core.Timeline[Diff]) map[int]struct{} {
+	present := make(map[int]struct{})
 
-	present := make(map[int]struct{}, len(tmp))
-	for _, o := range tmp {
-		switch o.kind {
-		case operationAdd:
-			present[o.value] = struct{}{}
-		case operationRemove:
-			delete(present, o.value)
+	operations := tl.Operations()
+
+	sort.Slice(operations, func(i, j int) bool { return operations[i].ID.Before(operations[j].ID) })
+
+	for _, ops := range operations {
+		switch ops.Diff.Kind {
+		case Add:
+			present[ops.Diff.Value] = struct{}{}
+		case Remove:
+			delete(present, ops.Diff.Value)
 		}
 	}
 	return present
@@ -25,8 +26,8 @@ func replayToMap(ops []operation) map[int]struct{} {
 
 func mapKeysSorted(m map[int]struct{}) []int {
 	values := make([]int, 0, len(m))
-	for k := range m {
-		values = append(values, k)
+	for v := range m {
+		values = append(values, v)
 	}
 	sort.Ints(values)
 	return values
