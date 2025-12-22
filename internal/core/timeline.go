@@ -1,5 +1,7 @@
 package core
 
+import "slices"
+
 type Operation[DIFF any] struct {
 	ID   OperationID
 	Diff DIFF
@@ -50,8 +52,6 @@ func (t *Timeline[DIFF]) Operations() []Operation[DIFF] {
 	for cur := t.last; cur != nil; cur = cur.prev {
 		tmp = append(tmp, Operation[DIFF]{ID: cur.id, Diff: cur.diff})
 	}
-	for i, j := 0, len(tmp)-1; i < j; i, j = i+1, j-1 {
-		tmp[i], tmp[j] = tmp[j], tmp[i]
-	}
+	slices.Reverse(tmp)
 	return tmp
 }
