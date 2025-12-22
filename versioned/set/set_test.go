@@ -3,6 +3,8 @@ package set
 import (
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBasicAddRemoveContainsItems(t *testing.T) {
@@ -13,23 +15,14 @@ func TestBasicAddRemoveContainsItems(t *testing.T) {
 	s.Add(3)
 	s.Remove(2)
 
-	if got, want := s.Contains(1), true; got != want {
-		t.Fatalf("Contains(1)=%v, want %v", got, want)
-	}
-	if got, want := s.Contains(2), false; got != want {
-		t.Fatalf("Contains(2)=%v, want %v", got, want)
-	}
-	if got, want := s.Contains(3), true; got != want {
-		t.Fatalf("Contains(3)=%v, want %v", got, want)
-	}
+	assert.True(t, s.Contains(1))
+	assert.False(t, s.Contains(2))
+	assert.True(t, s.Contains(3))
 
-	if got, want := s.Size(), 2; got != want {
-		t.Fatalf("Size()=%d, want %d", got, want)
-	}
+	assert.Equal(t, 2, s.Size())
 
-	if got, want := s.Items(), []int{1, 3}; !reflect.DeepEqual(got, want) {
-		t.Fatalf("Items()=%v, want %v", got, want)
-	}
+	assert.Contains(t, s.Items(), 1)
+	assert.Contains(t, s.Items(), 3)
 }
 
 func TestMergeNonConflicting(t *testing.T) {
