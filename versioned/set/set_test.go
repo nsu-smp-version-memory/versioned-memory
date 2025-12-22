@@ -123,27 +123,25 @@ func TestMergeDoesNotMutateInputs(t *testing.T) {
 }
 
 func TestConcurrentTwoGoroutinesMergeAdds(t *testing.T) {
-	var a, b *Set
-
-	doneA := make(chan struct{})
-	doneB := make(chan struct{})
+	doneA := make(chan *Set)
+	doneB := make(chan *Set)
 
 	go func() {
-		defer close(doneA)
-		a = NewSet()
+		a := NewSet()
 		a.Add(1)
 		a.Add(2)
+		doneA <- a
 	}()
 
 	go func() {
-		defer close(doneB)
-		b = NewSet()
+		b := NewSet()
 		b.Add(3)
 		b.Add(4)
+		doneB <- b
 	}()
 
-	<-doneA
-	<-doneB
+	a := <-doneA
+	b := <-doneB
 
 	m := Merge(a, b)
 
