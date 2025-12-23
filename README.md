@@ -138,6 +138,26 @@ s.Add(3)
 s.Join() // wait for goroutine finish and merge
 ```
 
+### 4.2 Stack
+
+#### Примеры использования
+
+##### Тесты
+
+https://github.com/nsu-smp-version-memory/versioned-memory/blob/main/versioned/stack/stack_test.go
+
+### 4.3 Queue
+
+#### Примеры использования
+
+##### Тесты
+
+https://github.com/nsu-smp-version-memory/versioned-memory/blob/main/versioned/queue/queue_test.go
+
 ### 4.4 Balanced tree
 
-- 
+#### Примеры использования
+
+##### Тесты
+
+https://github.com/nsu-smp-version-memory/versioned-memory/blob/main/versioned/tree/tree_test.go
