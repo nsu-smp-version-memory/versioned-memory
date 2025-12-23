@@ -7,21 +7,17 @@ import (
 )
 
 func replayToMap(tl *core.Timeline[Diff]) map[int]struct{} {
-	present := make(map[int]struct{})
+	out := make(map[int]struct{})
 
-	operations := tl.Operations()
-
-	sort.Slice(operations, func(i, j int) bool { return operations[i].ID.Before(operations[j].ID) })
-
-	for _, ops := range operations {
+	for _, ops := range tl.Operations() {
 		switch ops.Diff.Kind {
 		case Add:
-			present[ops.Diff.Value] = struct{}{}
+			out[ops.Diff.Value] = struct{}{}
 		case Remove:
-			delete(present, ops.Diff.Value)
+			delete(out, ops.Diff.Value)
 		}
 	}
-	return present
+	return out
 }
 
 func mapKeysSorted(m map[int]struct{}) []int {

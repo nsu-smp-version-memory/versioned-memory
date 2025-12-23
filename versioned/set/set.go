@@ -34,26 +34,6 @@ func (s *Set) Remove(value int) {
 	s.mutex.Unlock()
 }
 
-func Merge(a, b *Set) *Set {
-	operations := make([]core.Operation[Diff], 0)
-
-	a.mutex.Lock()
-	timelineA := a.timeline
-	a.mutex.Unlock()
-	operations = append(operations, timelineA.Operations()...)
-
-	b.mutex.Lock()
-	timelineB := b.timeline
-	b.mutex.Unlock()
-	operations = append(operations, timelineB.Operations()...)
-
-	sortOperationsByID(operations)
-
-	return &Set{
-		timeline: core.TimelineFromOperations(core.NewSource(), operations),
-	}
-}
-
 func (s *Set) Contains(key int) bool {
 	s.mutex.Lock()
 	tl := s.timeline
@@ -82,14 +62,41 @@ func (s *Set) Size() int {
 	return len(m)
 }
 
+func (s *Set) SetMerger(merger core.Merger[Diff]) {
+	s.mutex.Lock()
+	s.merger = merger
+	s.mutex.Unlock()
+}
+
+func Merge(a, b *Set) *Set {
+
+	merger := a.merger
+	if merger == nil {
+		merger = &NaturalOrderMerger{}
+	}
+
+	a.mutex.Lock()
+	operationsA := a.timeline.Operations()
+	a.mutex.Unlock()
+
+	b.mutex.Lock()
+	operationsB := b.timeline.Operations()
+	b.mutex.Unlock()
+
+	result := merger.Merge([][]core.Operation[Diff]{operationsA, operationsB})
+
+	sortOperationsByID(result)
+
+	return &Set{
+		timeline: core.TimelineFromOperations(core.NewSource(), result),
+		merger:   merger,
+	}
+}
+
 func sortOperationsByID[DIFF any](ops []core.Operation[DIFF]) {
 	sort.Slice(ops, func(i, j int) bool {
 		return ops[i].ID.Before(ops[j].ID)
 	})
-}
-
-func (s *Set) SetMerger(merger core.Merger[Diff]) {
-	s.merger = merger
 }
 
 type NaturalOrderMerger struct {
