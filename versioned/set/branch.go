@@ -15,9 +15,6 @@ func (s *Set) WithBranch(fn func(local *Set)) <-chan struct{} {
 	s.mutex.Lock()
 	branchTimeline, since := s.timeline.Fork(core.NewSource())
 	merger := s.merger
-	if merger == nil {
-		merger = &NaturalOrderMerger{}
-	}
 	s.mutex.Unlock()
 
 	local := &Set{
@@ -46,10 +43,6 @@ func (s *Set) MergeBranches() {
 	pending := s.pendingBranches
 	s.pendingBranches = nil
 	base := s.timeline
-	merger := s.merger
-	if merger == nil {
-		merger = &NaturalOrderMerger{}
-	}
 	s.mutex.Unlock()
 
 	input := make([][]core.Operation[Diff], 0)
