@@ -114,6 +114,30 @@
 
 При вызове метода `Set.Go` запускается горутина, которая получает свою независимую версию сета. В этой горутине с сетом обращаются как обычным мутабельным контейнером. Когда горутина завершает свою работу, ее ветка изменений становится доступна для слияния с основной. Основной поток может запустить слияние веток, вызвав метод `Join`. Позвав `Join`, горутина заблокируется и будет ждать окончания работы параллельных веток. Как только все ветки отработают, произойдет слияние, и содержимое сета обновится согласно выбранной стратегии
 
+#### Примеры использования
+
+##### Тесты
+
+https://github.com/nsu-smp-version-memory/versioned-memory/blob/main/versioned/set/set_test.go
+
+##### Пример кода
+
+```go
+s := set.NewSet() // creating versioned set
+
+s.Go(func (s *Set) { // start goroutine with separate set version
+  // add changes to new version
+  s.Add(1)
+  s.Add(10)
+})
+
+// add changes to original one
+s.Add(2)
+s.Add(3)
+
+s.Join() // wait for goroutine finish and merge
+```
+
 ### 4.4 Balanced tree
 
 - 
