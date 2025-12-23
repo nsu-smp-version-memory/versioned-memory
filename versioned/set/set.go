@@ -109,6 +109,8 @@ func (_ *NaturalOrderMerger) Merge(operationBranches [][]core.Operation[Diff]) [
 		result = append(result, ops...)
 	}
 
+	sortOperationsByID(result)
+
 	return result
 }
 

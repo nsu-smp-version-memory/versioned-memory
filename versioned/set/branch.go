@@ -59,7 +59,6 @@ func (s *Set) MergeBranches() {
 	}
 
 	result := s.merger.Merge(input)
-	sortOperationsByID(result)
 
 	s.mutex.Lock()
 	s.timeline = core.TimelineFromOperations(core.NewSource(), result)
