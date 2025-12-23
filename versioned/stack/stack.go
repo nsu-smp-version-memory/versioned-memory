@@ -1,4 +1,4 @@
-package set
+package stack
 
 import (
 	"sort"
@@ -7,7 +7,7 @@ import (
 	"github.com/nsu-smp-version-memory/versioned-memory/internal/core"
 )
 
-type Set struct {
+type Stack struct {
 	mutex           sync.Mutex
 	timeline        *core.Timeline[Diff]
 	pendingBranches []pendingBranch
@@ -15,61 +15,68 @@ type Set struct {
 	merger          core.Merger[Diff]
 }
 
-func NewSet() *Set {
-	return &Set{
+func NewStack() *Stack {
+	return &Stack{
 		timeline: core.NewTimeline[Diff](core.NewSource()),
-		merger:   &NaturalOrderMerger{},
+		merger:   &TopWinsMerger{},
 	}
 }
 
-func (s *Set) Add(value int) {
+func (s *Stack) Push(value int) {
 	s.mutex.Lock()
-	s.timeline = s.timeline.NextChange(Diff{Kind: Add, Value: value})
+	s.timeline = s.timeline.NextChange(Diff{Kind: Push, Value: value})
 	s.mutex.Unlock()
 }
 
-func (s *Set) Remove(value int) {
+func (s *Stack) Pop() {
 	s.mutex.Lock()
-	s.timeline = s.timeline.NextChange(Diff{Kind: Remove, Value: value})
+	s.timeline = s.timeline.NextChange(Diff{Kind: Pop})
 	s.mutex.Unlock()
 }
 
-func (s *Set) Contains(key int) bool {
-	s.mutex.Lock()
-	tl := s.timeline
-	s.mutex.Unlock()
-
-	m := replayToMap(tl)
-	_, ok := m[key]
-	return ok
-}
-
-func (s *Set) Items() []int {
+func (s *Stack) Top() (int, bool) {
 	s.mutex.Lock()
 	tl := s.timeline
 	s.mutex.Unlock()
 
-	m := replayToMap(tl)
-	return mapKeysSorted(m)
+	data := replayToSlice(tl)
+	if len(data) == 0 {
+		return 0, false
+	}
+	return data[len(data)-1], true
 }
 
-func (s *Set) Size() int {
+func (s *Stack) Items() []int {
 	s.mutex.Lock()
 	tl := s.timeline
 	s.mutex.Unlock()
 
-	m := replayToMap(tl)
-	return len(m)
+	data := replayToSlice(tl)
+
+	out := make([]int, len(data))
+	copy(out, data)
+	return out
 }
 
-func (s *Set) SetMerger(merger core.Merger[Diff]) {
+func (s *Stack) Size() int {
+	s.mutex.Lock()
+	tl := s.timeline
+	s.mutex.Unlock()
+
+	return len(replayToSlice(tl))
+}
+
+func (s *Stack) SetMerger(merger core.Merger[Diff]) {
 	s.mutex.Lock()
 	s.merger = merger
 	s.mutex.Unlock()
 }
 
-func Merge(a, b *Set) *Set {
+func Merge(a, b *Stack) *Stack {
 	merger := a.merger
+	if merger == nil {
+		merger = &TopWinsMerger{}
+	}
 
 	a.mutex.Lock()
 	operationsA := a.timeline.Operations()
@@ -81,7 +88,9 @@ func Merge(a, b *Set) *Set {
 
 	result := merger.Merge([][]core.Operation[Diff]{operationsA, operationsB})
 
-	return &Set{
+	sortOperationsByID(result)
+
+	return &Stack{
 		timeline: core.TimelineFromOperations(core.NewSource(), result),
 		merger:   merger,
 	}
@@ -93,10 +102,10 @@ func sortOperationsByID[DIFF any](ops []core.Operation[DIFF]) {
 	})
 }
 
-type NaturalOrderMerger struct {
+type TopWinsMerger struct {
 }
 
-func (_ *NaturalOrderMerger) Merge(operationBranches [][]core.Operation[Diff]) []core.Operation[Diff] {
+func (_ *TopWinsMerger) Merge(operationBranches [][]core.Operation[Diff]) []core.Operation[Diff] {
 	result := make([]core.Operation[Diff], 0)
 
 	for _, ops := range operationBranches {
@@ -108,15 +117,13 @@ func (_ *NaturalOrderMerger) Merge(operationBranches [][]core.Operation[Diff]) [
 	return result
 }
 
-type ReverseOrderMerger struct {
+type BottomWinsMerger struct {
 }
 
-func (_ *ReverseOrderMerger) Merge(operationBranches [][]core.Operation[Diff]) []core.Operation[Diff] {
+func (_ *BottomWinsMerger) Merge(operationBranches [][]core.Operation[Diff]) []core.Operation[Diff] {
 	result := make([]core.Operation[Diff], 0)
-
 	for i := len(operationBranches) - 1; i >= 0; i-- {
 		result = append(result, operationBranches[i]...)
 	}
-
 	return result
 }

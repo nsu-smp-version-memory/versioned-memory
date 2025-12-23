@@ -170,3 +170,22 @@ func TestGoWithJoin(t *testing.T) {
 
 	assert.True(t, reflect.DeepEqual(s.Items(), []int{2, 3, 10}))
 }
+
+func TestReverseOrderMerger_Merge(t *testing.T) {
+	s := NewSet()
+	s.SetMerger(&ReverseOrderMerger{})
+	s.Add(1)
+	s.Add(2)
+
+	done := s.WithBranch(func(s *Set) {
+		s.Remove(1)
+		s.Add(10)
+	})
+
+	s.Add(3)
+
+	<-done
+	s.MergeBranches()
+
+	assert.True(t, reflect.DeepEqual(s.Items(), []int{1, 2, 3, 10}))
+}

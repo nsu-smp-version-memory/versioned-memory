@@ -1,15 +1,13 @@
-package set
+package stack
 
-import (
-	"github.com/nsu-smp-version-memory/versioned-memory/internal/core"
-)
+import "github.com/nsu-smp-version-memory/versioned-memory/internal/core"
 
 type pendingBranch struct {
 	timeline *core.Timeline[Diff]
 	since    core.ForkPoint[Diff]
 }
 
-func (s *Set) WithBranch(fn func(local *Set)) <-chan struct{} {
+func (s *Stack) WithBranch(fn func(local *Stack)) <-chan struct{} {
 	done := make(chan struct{})
 
 	s.mutex.Lock()
@@ -17,7 +15,7 @@ func (s *Set) WithBranch(fn func(local *Set)) <-chan struct{} {
 	merger := s.merger
 	s.mutex.Unlock()
 
-	local := &Set{
+	local := &Stack{
 		timeline: branchTimeline,
 		merger:   merger,
 	}
@@ -38,11 +36,12 @@ func (s *Set) WithBranch(fn func(local *Set)) <-chan struct{} {
 	return done
 }
 
-func (s *Set) MergeBranches() {
+func (s *Stack) MergeBranches() {
 	s.mutex.Lock()
 	pending := s.pendingBranches
 	s.pendingBranches = nil
 	base := s.timeline
+	merger := s.merger
 	s.mutex.Unlock()
 
 	input := make([][]core.Operation[Diff], 0)
@@ -58,18 +57,18 @@ func (s *Set) MergeBranches() {
 		input = append(input, br.timeline.OperationsAfter(br.since))
 	}
 
-	result := s.merger.Merge(input)
+	result := merger.Merge(input)
 
 	s.mutex.Lock()
 	s.timeline = core.TimelineFromOperations(core.NewSource(), result)
 	s.mutex.Unlock()
 }
 
-func (s *Set) Go(f func(s *Set)) {
+func (s *Stack) Go(f func(s *Stack)) {
 	s.WithBranch(f)
 }
 
-func (s *Set) Join() {
+func (s *Stack) Join() {
 	s.wg.Wait()
 	s.MergeBranches()
 }
