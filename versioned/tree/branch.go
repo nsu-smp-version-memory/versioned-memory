@@ -53,9 +53,15 @@ func (t *Tree) MergeBranches() {
 		for i := len(operations) - 1; i >= 0; i-- {
 			switch operations[i].Diff.Kind {
 			case Add:
-				root = root.remove(operations[i].Diff.Value)
+				if root != nil {
+					root = root.remove(operations[i].Diff.Value)
+				}
 			case Remove:
-				root = root.insert(operations[i].Diff.Value)
+				if root == nil {
+					root = newNode(operations[i].Diff.Value)
+				} else {
+					root = root.insert(operations[i].Diff.Value)
+				}
 			}
 
 		}
@@ -75,9 +81,15 @@ func (t *Tree) MergeBranches() {
 	for _, op := range result {
 		switch op.Diff.Kind {
 		case Add:
-			root = root.insert(op.Diff.Value)
+			if root == nil {
+				root = newNode(op.Diff.Value)
+			} else {
+				root = root.insert(op.Diff.Value)
+			}
 		case Remove:
-			root = root.remove(op.Diff.Value)
+			if root != nil {
+				root = root.remove(op.Diff.Value)
+			}
 		}
 	}
 

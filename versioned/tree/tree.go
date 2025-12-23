@@ -166,11 +166,19 @@ func (n *node) remove(value int) *node {
 	p := n
 
 	if value < p.value {
-		p = p.setLeft(p.left.remove(value))
-		return p.balance()
+		if p.left == nil {
+			return p
+		} else {
+			p = p.setLeft(p.left.remove(value))
+			return p.balance()
+		}
 	} else if value > n.value {
-		p = p.setRight(p.right.remove(value))
-		return p.balance()
+		if p.right == nil {
+			return p
+		} else {
+			p = p.setRight(p.right.remove(value))
+			return p.balance()
+		}
 	} else {
 		q := p.left
 		r := p.right
@@ -314,17 +322,49 @@ func Merge(a, b *Tree) *Tree {
 
 	a.mutex.Lock()
 	operationsA := a.timeline.Operations()
+	root := a.root
 	a.mutex.Unlock()
 
 	b.mutex.Lock()
 	operationsB := b.timeline.Operations()
 	b.mutex.Unlock()
 
+	for i := len(operationsA) - 1; i >= 0; i-- {
+		switch operationsA[i].Diff.Kind {
+		case Add:
+			if root != nil {
+				root = root.remove(operationsA[i].Diff.Value)
+			}
+		case Remove:
+			if root == nil {
+				root = newNode(operationsA[i].Diff.Value)
+			} else {
+				root = root.insert(operationsA[i].Diff.Value)
+			}
+		}
+	}
+
 	result := merger.Merge([][]core.Operation[Diff]{operationsA, operationsB})
+
+	for _, op := range result {
+		switch op.Diff.Kind {
+		case Add:
+			if root == nil {
+				root = newNode(op.Diff.Value)
+			} else {
+				root = root.insert(op.Diff.Value)
+			}
+		case Remove:
+			if root != nil {
+				root = root.remove(op.Diff.Value)
+			}
+		}
+	}
 
 	return &Tree{
 		timeline: core.TimelineFromOperations(core.NewSource(), result),
 		merger:   merger,
+		root:     root,
 	}
 }
 
