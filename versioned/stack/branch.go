@@ -13,9 +13,6 @@ func (s *Stack) WithBranch(fn func(local *Stack)) <-chan struct{} {
 	s.mutex.Lock()
 	branchTimeline, since := s.timeline.Fork(core.NewSource())
 	merger := s.merger
-	if merger == nil {
-		merger = &TopWinsMerger{}
-	}
 	s.mutex.Unlock()
 
 	local := &Stack{
@@ -45,9 +42,6 @@ func (s *Stack) MergeBranches() {
 	s.pendingBranches = nil
 	base := s.timeline
 	merger := s.merger
-	if merger == nil {
-		merger = &TopWinsMerger{}
-	}
 	s.mutex.Unlock()
 
 	input := make([][]core.Operation[Diff], 0)
@@ -64,7 +58,6 @@ func (s *Stack) MergeBranches() {
 	}
 
 	result := merger.Merge(input)
-	sortOperationsByID(result)
 
 	s.mutex.Lock()
 	s.timeline = core.TimelineFromOperations(core.NewSource(), result)

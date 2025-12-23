@@ -111,6 +111,9 @@ func (_ *TopWinsMerger) Merge(operationBranches [][]core.Operation[Diff]) []core
 	for _, ops := range operationBranches {
 		result = append(result, ops...)
 	}
+
+	sortOperationsByID(result)
+
 	return result
 }
 
