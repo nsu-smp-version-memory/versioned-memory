@@ -69,11 +69,7 @@ func (s *Set) SetMerger(merger core.Merger[Diff]) {
 }
 
 func Merge(a, b *Set) *Set {
-
 	merger := a.merger
-	if merger == nil {
-		merger = &NaturalOrderMerger{}
-	}
 
 	a.mutex.Lock()
 	operationsA := a.timeline.Operations()
@@ -84,8 +80,6 @@ func Merge(a, b *Set) *Set {
 	b.mutex.Unlock()
 
 	result := merger.Merge([][]core.Operation[Diff]{operationsA, operationsB})
-
-	sortOperationsByID(result)
 
 	return &Set{
 		timeline: core.TimelineFromOperations(core.NewSource(), result),
