@@ -189,3 +189,33 @@ func TestReverseOrderMerger_Merge(t *testing.T) {
 
 	assert.True(t, reflect.DeepEqual(s.Items(), []int{1, 2, 3, 10}))
 }
+
+func TestTwoSameValues(t *testing.T) {
+	s := NewTree()
+
+	s.Go(func(s *Tree) {
+		s.Add(1)
+	})
+
+	s.Add(1)
+
+	s.Join()
+
+	assert.Equal(t, 2, s.Size())
+	assert.True(t, reflect.DeepEqual(s.Items(), []int{1, 1}))
+}
+
+func TestThreeSameValuesBalanced(t *testing.T) {
+	s := NewTree()
+
+	s.Add(1)
+	s.Add(1)
+	s.Add(1)
+
+	assert.Equal(t, 3, s.Size())
+	assert.True(t, reflect.DeepEqual(s.Items(), []int{1, 1, 1}))
+
+	assert.NotNil(t, s.root)
+	assert.NotNil(t, s.root.left)
+	assert.NotNil(t, s.root.right)
+}
