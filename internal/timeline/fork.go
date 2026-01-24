@@ -1,10 +1,12 @@
-package core
+package timeline
+
+import "github.com/nsu-smp-version-memory/versioned-memory/internal/core"
 
 type ForkPoint[DIFF any] struct {
 	node *Node[DIFF]
 }
 
-func (t *Timeline[DIFF]) Fork(newSource *Source) (*Timeline[DIFF], ForkPoint[DIFF]) {
+func (t *Timeline[DIFF]) Fork(newSource *core.Source) (*Timeline[DIFF], ForkPoint[DIFF]) {
 	return &Timeline[DIFF]{
 		last:   t.last,
 		source: newSource,

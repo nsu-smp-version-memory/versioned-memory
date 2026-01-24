@@ -5,19 +5,20 @@ import (
 	"sync"
 
 	"github.com/nsu-smp-version-memory/versioned-memory/internal/core"
+	"github.com/nsu-smp-version-memory/versioned-memory/internal/timeline"
 )
 
 type Set struct {
 	mutex           sync.Mutex
-	timeline        *core.Timeline[Diff]
+	timeline        *timeline.Timeline[Diff]
 	pendingBranches []pendingBranch
 	wg              sync.WaitGroup
-	merger          core.Merger[Diff]
+	merger          timeline.Merger[Diff]
 }
 
 func NewSet() *Set {
 	return &Set{
-		timeline: core.NewTimeline[Diff](core.NewSource()),
+		timeline: timeline.NewTimeline[Diff](core.NewSource()),
 		merger:   &NaturalOrderMerger{},
 	}
 }
@@ -62,7 +63,7 @@ func (s *Set) Size() int {
 	return len(m)
 }
 
-func (s *Set) SetMerger(merger core.Merger[Diff]) {
+func (s *Set) SetMerger(merger timeline.Merger[Diff]) {
 	s.mutex.Lock()
 	s.merger = merger
 	s.mutex.Unlock()
@@ -79,15 +80,15 @@ func Merge(a, b *Set) *Set {
 	operationsB := b.timeline.Operations()
 	b.mutex.Unlock()
 
-	result := merger.Merge([][]core.Operation[Diff]{operationsA, operationsB})
+	result := merger.Merge([][]timeline.Operation[Diff]{operationsA, operationsB})
 
 	return &Set{
-		timeline: core.TimelineFromOperations(core.NewSource(), result),
+		timeline: timeline.FromOperations(core.NewSource(), result),
 		merger:   merger,
 	}
 }
 
-func sortOperationsByID[DIFF any](ops []core.Operation[DIFF]) {
+func sortOperationsByID[DIFF any](ops []timeline.Operation[DIFF]) {
 	sort.Slice(ops, func(i, j int) bool {
 		return ops[i].ID.Before(ops[j].ID)
 	})
@@ -96,8 +97,8 @@ func sortOperationsByID[DIFF any](ops []core.Operation[DIFF]) {
 type NaturalOrderMerger struct {
 }
 
-func (_ *NaturalOrderMerger) Merge(operationBranches [][]core.Operation[Diff]) []core.Operation[Diff] {
-	result := make([]core.Operation[Diff], 0)
+func (_ *NaturalOrderMerger) Merge(operationBranches [][]timeline.Operation[Diff]) []timeline.Operation[Diff] {
+	result := make([]timeline.Operation[Diff], 0)
 
 	for _, ops := range operationBranches {
 		result = append(result, ops...)
@@ -111,8 +112,8 @@ func (_ *NaturalOrderMerger) Merge(operationBranches [][]core.Operation[Diff]) [
 type ReverseOrderMerger struct {
 }
 
-func (_ *ReverseOrderMerger) Merge(operationBranches [][]core.Operation[Diff]) []core.Operation[Diff] {
-	result := make([]core.Operation[Diff], 0)
+func (_ *ReverseOrderMerger) Merge(operationBranches [][]timeline.Operation[Diff]) []timeline.Operation[Diff] {
+	result := make([]timeline.Operation[Diff], 0)
 
 	for i := len(operationBranches) - 1; i >= 0; i-- {
 		result = append(result, operationBranches[i]...)

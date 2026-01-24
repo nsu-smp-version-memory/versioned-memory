@@ -5,19 +5,20 @@ import (
 	"sync"
 
 	"github.com/nsu-smp-version-memory/versioned-memory/internal/core"
+	"github.com/nsu-smp-version-memory/versioned-memory/internal/timeline"
 )
 
 type Stack struct {
 	mutex           sync.Mutex
-	timeline        *core.Timeline[Diff]
+	timeline        *timeline.Timeline[Diff]
 	pendingBranches []pendingBranch
 	wg              sync.WaitGroup
-	merger          core.Merger[Diff]
+	merger          timeline.Merger[Diff]
 }
 
 func NewStack() *Stack {
 	return &Stack{
-		timeline: core.NewTimeline[Diff](core.NewSource()),
+		timeline: timeline.NewTimeline[Diff](core.NewSource()),
 		merger:   &TopWinsMerger{},
 	}
 }
@@ -66,7 +67,7 @@ func (s *Stack) Size() int {
 	return len(replayToSlice(tl))
 }
 
-func (s *Stack) SetMerger(merger core.Merger[Diff]) {
+func (s *Stack) SetMerger(merger timeline.Merger[Diff]) {
 	s.mutex.Lock()
 	s.merger = merger
 	s.mutex.Unlock()
@@ -86,17 +87,17 @@ func Merge(a, b *Stack) *Stack {
 	operationsB := b.timeline.Operations()
 	b.mutex.Unlock()
 
-	result := merger.Merge([][]core.Operation[Diff]{operationsA, operationsB})
+	result := merger.Merge([][]timeline.Operation[Diff]{operationsA, operationsB})
 
 	sortOperationsByID(result)
 
 	return &Stack{
-		timeline: core.TimelineFromOperations(core.NewSource(), result),
+		timeline: timeline.FromOperations(core.NewSource(), result),
 		merger:   merger,
 	}
 }
 
-func sortOperationsByID[DIFF any](ops []core.Operation[DIFF]) {
+func sortOperationsByID[DIFF any](ops []timeline.Operation[DIFF]) {
 	sort.Slice(ops, func(i, j int) bool {
 		return ops[i].ID.Before(ops[j].ID)
 	})
@@ -105,8 +106,8 @@ func sortOperationsByID[DIFF any](ops []core.Operation[DIFF]) {
 type TopWinsMerger struct {
 }
 
-func (_ *TopWinsMerger) Merge(operationBranches [][]core.Operation[Diff]) []core.Operation[Diff] {
-	result := make([]core.Operation[Diff], 0)
+func (_ *TopWinsMerger) Merge(operationBranches [][]timeline.Operation[Diff]) []timeline.Operation[Diff] {
+	result := make([]timeline.Operation[Diff], 0)
 
 	for _, ops := range operationBranches {
 		result = append(result, ops...)
@@ -120,8 +121,8 @@ func (_ *TopWinsMerger) Merge(operationBranches [][]core.Operation[Diff]) []core
 type BottomWinsMerger struct {
 }
 
-func (_ *BottomWinsMerger) Merge(operationBranches [][]core.Operation[Diff]) []core.Operation[Diff] {
-	result := make([]core.Operation[Diff], 0)
+func (_ *BottomWinsMerger) Merge(operationBranches [][]timeline.Operation[Diff]) []timeline.Operation[Diff] {
+	result := make([]timeline.Operation[Diff], 0)
 	for i := len(operationBranches) - 1; i >= 0; i-- {
 		result = append(result, operationBranches[i]...)
 	}

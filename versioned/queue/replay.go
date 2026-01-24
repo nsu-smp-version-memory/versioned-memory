@@ -1,8 +1,10 @@
 package queue
 
-import "github.com/nsu-smp-version-memory/versioned-memory/internal/core"
+import (
+	"github.com/nsu-smp-version-memory/versioned-memory/internal/timeline"
+)
 
-func replayToSlice(tl *core.Timeline[Diff]) []int {
+func replayToSlice(tl *timeline.Timeline[Diff]) []int {
 	ops := tl.Operations()
 
 	out := make([]int, 0, len(ops))

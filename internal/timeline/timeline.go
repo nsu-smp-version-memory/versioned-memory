@@ -1,24 +1,28 @@
-package core
+package timeline
 
-import "slices"
+import (
+	"slices"
+
+	"github.com/nsu-smp-version-memory/versioned-memory/internal/core"
+)
 
 type Operation[DIFF any] struct {
-	ID   OperationID
+	ID   core.OperationID
 	Diff DIFF
 }
 
 type Node[DIFF any] struct {
-	id   OperationID
+	id   core.OperationID
 	prev *Node[DIFF]
 	diff DIFF
 }
 
 type Timeline[DIFF any] struct {
 	last   *Node[DIFF]
-	source *Source
+	source *core.Source
 }
 
-func NewTimeline[DIFF any](src *Source) *Timeline[DIFF] {
+func NewTimeline[DIFF any](src *core.Source) *Timeline[DIFF] {
 	return &Timeline[DIFF]{last: nil, source: src}
 }
 
@@ -35,7 +39,7 @@ func (t *Timeline[DIFF]) NextChange(diff DIFF) *Timeline[DIFF] {
 	}
 }
 
-func TimelineFromOperations[DIFF any](src *Source, ops []Operation[DIFF]) *Timeline[DIFF] {
+func FromOperations[DIFF any](src *core.Source, ops []Operation[DIFF]) *Timeline[DIFF] {
 	var last *Node[DIFF]
 	for i := 0; i < len(ops); i++ {
 		last = &Node[DIFF]{

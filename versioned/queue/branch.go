@@ -1,10 +1,13 @@
 package queue
 
-import "github.com/nsu-smp-version-memory/versioned-memory/internal/core"
+import (
+	"github.com/nsu-smp-version-memory/versioned-memory/internal/core"
+	"github.com/nsu-smp-version-memory/versioned-memory/internal/timeline"
+)
 
 type pendingBranch struct {
-	timeline *core.Timeline[Diff]
-	since    core.ForkPoint[Diff]
+	timeline *timeline.Timeline[Diff]
+	since    timeline.ForkPoint[Diff]
 }
 
 func (q *Queue) WithBranch(fn func(local *Queue)) <-chan struct{} {
@@ -45,7 +48,7 @@ func (q *Queue) MergeBranches() {
 	merger := q.merger
 	q.mutex.Unlock()
 
-	input := make([][]core.Operation[Diff], 0)
+	input := make([][]timeline.Operation[Diff], 0)
 
 	if base != nil {
 		input = append(input, base.Operations())
@@ -58,7 +61,7 @@ func (q *Queue) MergeBranches() {
 	result := merger.Merge(input)
 
 	q.mutex.Lock()
-	q.timeline = core.TimelineFromOperations(core.NewSource(), result)
+	q.timeline = timeline.FromOperations(core.NewSource(), result)
 	q.mutex.Unlock()
 }
 

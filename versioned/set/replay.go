@@ -3,10 +3,10 @@ package set
 import (
 	"sort"
 
-	"github.com/nsu-smp-version-memory/versioned-memory/internal/core"
+	"github.com/nsu-smp-version-memory/versioned-memory/internal/timeline"
 )
 
-func replayToMap(tl *core.Timeline[Diff]) map[int]struct{} {
+func replayToMap(tl *timeline.Timeline[Diff]) map[int]struct{} {
 	out := make(map[int]struct{})
 
 	for _, ops := range tl.Operations() {

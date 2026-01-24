@@ -2,11 +2,12 @@ package set
 
 import (
 	"github.com/nsu-smp-version-memory/versioned-memory/internal/core"
+	"github.com/nsu-smp-version-memory/versioned-memory/internal/timeline"
 )
 
 type pendingBranch struct {
-	timeline *core.Timeline[Diff]
-	since    core.ForkPoint[Diff]
+	timeline *timeline.Timeline[Diff]
+	since    timeline.ForkPoint[Diff]
 }
 
 func (s *Set) WithBranch(fn func(local *Set)) <-chan struct{} {
@@ -45,7 +46,7 @@ func (s *Set) MergeBranches() {
 	base := s.timeline
 	s.mutex.Unlock()
 
-	input := make([][]core.Operation[Diff], 0)
+	input := make([][]timeline.Operation[Diff], 0)
 
 	if base != nil {
 		input = append(input, base.Operations())
@@ -61,7 +62,7 @@ func (s *Set) MergeBranches() {
 	result := s.merger.Merge(input)
 
 	s.mutex.Lock()
-	s.timeline = core.TimelineFromOperations(core.NewSource(), result)
+	s.timeline = timeline.FromOperations(core.NewSource(), result)
 	s.mutex.Unlock()
 }
 
